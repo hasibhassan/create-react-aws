@@ -1,13 +1,10 @@
 #!/usr/bin/env node
-// @ts-nocheck
 /* eslint-disable import/no-extraneous-dependencies */
 import chalk from 'chalk'
 import Commander from 'commander'
 import path from 'path'
 import prompts from 'prompts'
-import checkForUpdate from 'update-check'
 import { createApp, DownloadError } from './create-app'
-import { shouldUseYarn } from './helpers/should-use-yarn'
 import { validateNpmName } from './helpers/validate-pkg'
 import packageJson from './package.json'
 
@@ -27,26 +24,9 @@ const program = new Commander.Command(packageJson.name)
 `
   )
   .option(
-    '--use-npm',
+    '--use-yarn',
     `
-  Explicitly tell the CLI to bootstrap the app using npm
-`
-  )
-  .option(
-    '-e, --example [name]|[github-url]',
-    `
-  An example to bootstrap the app with. You can use an example name
-  from the official Next.js repo or a GitHub URL. The URL can use
-  any branch and/or subdirectory
-`
-  )
-  .option(
-    '--example-path <path-to-example>',
-    `
-  In a rare case, your GitHub URL might contain a branch name with
-  a slash (e.g. bug/fix-1) and the path to the example (e.g. foo/bar).
-  In this case, you must specify the path to the example separately:
-  --example-path foo/bar
+  Explicitly tell the CLI to bootstrap the app using yarn
 `
   )
   .allowUnknownOption()
@@ -84,7 +64,9 @@ async function run(): Promise<void> {
     )
     console.log()
     console.log('For example:')
-    console.log(`  ${chalk.cyan(program.name())} ${chalk.green('my-next-app')}`)
+    console.log(
+      `  ${chalk.cyan(program.name())} ${chalk.green('my-react-aws-app')}`
+    )
     console.log()
     console.log(
       `Run ${chalk.cyan(`${program.name()} --help`)} to see all options.`
@@ -112,17 +94,13 @@ async function run(): Promise<void> {
       'Please provide an example name or url, otherwise remove the example option.'
     )
     process.exit(1)
-    return
   }
 
   const example = typeof program.example === 'string' && program.example.trim()
   try {
     await createApp({
       appPath: resolvedProjectPath,
-      useNpm: !!program.useNpm,
-      example: example && example !== 'default' ? example : undefined,
-      examplePath: program.examplePath,
-      typescript: program.typescript,
+      useYarn: !!program.useYarn,
     })
   } catch (reason) {
     if (!(reason instanceof DownloadError)) {
@@ -143,54 +121,21 @@ async function run(): Promise<void> {
 
     await createApp({
       appPath: resolvedProjectPath,
-      useNpm: !!program.useNpm,
-      typescript: program.typescript,
+      useYarn: !!program.useYarn,
     })
   }
 }
 
-const update = checkForUpdate(packageJson).catch(() => null)
-
-async function notifyUpdate(): Promise<void> {
-  try {
-    const res = await update
-    if (res?.latest) {
-      const isYarn = shouldUseYarn()
-
-      console.log()
-      console.log(
-        chalk.yellow.bold('A new version of `create-next-app` is available!')
-      )
-      console.log(
-        'You can update by running: ' +
-          chalk.cyan(
-            isYarn
-              ? 'yarn global add create-next-app'
-              : 'npm i -g create-next-app'
-          )
-      )
-      console.log()
-    }
-    process.exit()
-  } catch {
-    // ignore error
+run().catch(async (reason) => {
+  console.log()
+  console.log('Aborting installation.')
+  if (reason.command) {
+    console.log(`  ${chalk.cyan(reason.command)} has failed.`)
+  } else {
+    console.log(chalk.red('Unexpected error. Please report it as a bug:'))
+    console.log(reason)
   }
-}
+  console.log()
 
-run()
-  .then(notifyUpdate)
-  .catch(async (reason) => {
-    console.log()
-    console.log('Aborting installation.')
-    if (reason.command) {
-      console.log(`  ${chalk.cyan(reason.command)} has failed.`)
-    } else {
-      console.log(chalk.red('Unexpected error. Please report it as a bug:'))
-      console.log(reason)
-    }
-    console.log()
-
-    await notifyUpdate()
-
-    process.exit(1)
-  })
+  process.exit(1)
+})
