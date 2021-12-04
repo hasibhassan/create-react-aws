@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable import/no-extraneous-dependencies */
 import chalk from 'chalk'
-import Commander from 'commander'
+import { Command } from 'commander'
 import path from 'path'
 import prompts from 'prompts'
 import { createApp, DownloadError } from './create-app'
@@ -10,19 +10,13 @@ import packageJson from './package.json'
 
 let projectPath: string = ''
 
-const program = new Commander.Command(packageJson.name)
+const program = new Command(packageJson.name)
   .version(packageJson.version)
   .arguments('<project-directory>')
   .usage(`${chalk.green('<project-directory>')} [options]`)
   .action((name) => {
     projectPath = name
   })
-  .option(
-    '--ts, --typescript',
-    `
-  Initialize as a TypeScript project.
-`
-  )
   .option(
     '--use-yarn',
     `
@@ -41,7 +35,7 @@ async function run(): Promise<void> {
       type: 'text',
       name: 'path',
       message: 'What is your project named?',
-      initial: 'my-app',
+      initial: 'my-react-aws-app',
       validate: (name) => {
         const validation = validateNpmName(path.basename(path.resolve(name)))
         if (validation.valid) {
@@ -89,14 +83,6 @@ async function run(): Promise<void> {
     process.exit(1)
   }
 
-  if (program.example === true) {
-    console.error(
-      'Please provide an example name or url, otherwise remove the example option.'
-    )
-    process.exit(1)
-  }
-
-  const example = typeof program.example === 'string' && program.example.trim()
   try {
     await createApp({
       appPath: resolvedProjectPath,
@@ -111,7 +97,7 @@ async function run(): Promise<void> {
       type: 'confirm',
       name: 'builtin',
       message:
-        `Could not download "${example}" because of a connectivity issue between your machine and GitHub.\n` +
+        `Could not download because of a connectivity issue between your machine and GitHub.\n` +
         `Do you want to use the default template instead?`,
       initial: true,
     })

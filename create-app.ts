@@ -147,10 +147,10 @@ export async function createApp({
     },
   })
 
-  // if (tryGitInit(root)) {
-  //   console.log('Initialized a git repository.')
-  //   console.log()
-  // }
+  if (tryGitInit(root)) {
+    console.log('Initialized a git repository.')
+    console.log()
+  }
 
   let cdpath: string
   if (path.join(originalDirectory, appName) === appPath) {
